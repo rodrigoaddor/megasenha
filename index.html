@@ -1,0 +1,154 @@
+<script>
+  let words = []
+  let sortedWords = []
+  let teams = []
+
+  let rightAudio = new Audio("right.mp3")
+  let timeAudio = new Audio("timesup.mp3")
+
+  rightAudio.volume = 1
+  timeAudio.volume = 0.4
+
+  const getWord = () => words.splice(Math.floor(Math.random() * words.length), 1)
+
+  const loadWords = () => {
+    get("palavras.txt").then((r) => {
+      words = shuffle(r.split("\n"))
+      sortedWords = r.split("\n")
+      console.log(`Loaded ${words.length} words.`)
+      findDuplicates(sortedWords)
+      document.querySelector(".center").innerHTML = "<i>Preparar...</i>"
+    })
+  }
+
+  const findDuplicates = tArray => {
+    let sortedArray = tArray;
+    sortedArray = sortedArray.sort();
+    let duplicates = []
+    for (let i = 0; i < sortedArray.length - 1; i++) {
+      if  (sortedArray[i + 1] == sortedArray[i])
+        duplicates.push(sortedArray[i])
+    }
+
+    if (duplicates.length > 0) {
+      console.log(`Found ${duplicates.length} duplicated words`)
+      console.log(duplicates)
+    }
+  }
+
+  const get = (url, timeout) => new Promise((res, rej) => {
+    let timeout
+    let xhttp = new XMLHttpRequest()
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        res(this.responseText)
+        clearTimeout(timeout)
+      }
+    }
+
+    xhttp.open("GET", url, true)
+    xhttp.send()
+    
+
+    timeout = setTimeout(() => rej("Timedout"), timeout || 5000)
+  })
+
+  const shuffle = array => {
+    let currentIndex = array.length, temporaryValue, randomIndex
+    while (0 !== currentIndex) {
+      randomIndex = Math.floor(Math.random() * currentIndex)
+      currentIndex -= 1
+      temporaryValue = array[currentIndex]
+      array[currentIndex] = array[randomIndex]
+      array[randomIndex] = temporaryValue
+    }
+    return array
+  }
+
+  loadWords()
+</script>
+
+<style>
+  @import url(http://fonts.googleapis.com/css?family=Roboto:300);
+  
+  html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+  }
+
+  .body {
+    height: 100%;
+    display: table;
+    margin: auto;
+  }
+
+  .center {
+    display: table-cell;
+    vertical-align: middle;
+
+    font-family: "Roboto", sans-serif;
+    font-size: 11em;
+    text-align: center;
+
+    user-select: none;
+  }
+</style>
+
+<body>
+  <div class="body">
+    <div class="center">
+      Loading...
+    </div>
+  </div>
+</body>
+
+<script>
+  let starting = true
+  let points = 0
+  let timeout;
+  let timedout = 0;
+  
+  /*document.body.addEventListener("click", function() {
+    console.log(words)
+    document.querySelector(".center").innerHTML = getWord() || this.innerHTML
+  }, true)*/
+
+  document.body.addEventListener("keydown", function(e) {
+    if (e.keyCode === 32) { //SPACE
+      document.querySelector(".center").innerHTML = "<i>Preparar...</i>"
+      starting = true
+      points = 0
+      timedout = false
+      clearTimeout(timeout)
+      timeAudio.pause()
+      return
+    }
+
+    if (e.keyCode === 13 || e.keyCode === 16) {
+      if (timedout)
+        return
+
+      if (e.keyCode === 13 && !starting) { //ENTER (RIGHT)
+        points++
+        rightAudio.currentTime = 0
+        rightAudio.play()
+      } else { //SHIFT (SKIP)
+
+      }
+
+
+      if (starting) {
+        timeout = setTimeout(() => {
+          timeAudio.currentTime = 0
+          timeAudio.play();
+          document.querySelector(".center").innerHTML = `<i style='color:red'>Tempo Esgotado!</i><br>${points} acertos!`
+          timedout = true
+        }, 60000);
+        starting = false
+      }
+
+      document.querySelector(".center").innerHTML = getWord() || this.innerHTML
+    }
+  })
+</script>
